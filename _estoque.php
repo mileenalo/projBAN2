@@ -1,0 +1,751 @@
+<?php
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Verificação de ações requisitadas via AJAX:
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+if(isset($_GET["a"])){
+    include("./script/classes/Inventory.php");
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Buscar conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "lista_inventory"){
+        $Inventory = new Inventory();
+
+        $res = $Inventory->listaInventory();
+		//parte de estoques
+		if(count($res) > 0){
+			echo '<div class="table-responsive">';
+			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
+				echo '<thead>';
+					echo '<tr>';
+						echo '<th style="text-align: left">Id</th>';
+						echo '<th style="text-align: center">Local (Endereço) </th>';
+                        echo '<th style="text-align: center">Editar</th>';
+                        echo '<th style="text-align: center">Deletar</th>';
+					echo '</tr>';
+				echo '</thead>';
+				echo '<tbody style="cursor: row-resize">';
+                foreach($res as $r){
+					echo '<tr>';
+						echo '<td style="text-align: left">'.$r["iv_inventoryId"].'</td>';
+						echo '<td style="text-align: center">'.$r["iv_location"].'</td>';
+                        echo '<td style="text-align: center">';
+							echo '<i title="Editar" onclick="get_item(\''.$r["iv_inventoryId"].'\')" class="fas fa-edit" style="cursor: pointer"></i>';
+						echo '</td>';
+                        echo '<td style="text-align: center">';
+							echo '<i title="Deletar" onclick="del_item(\''.$r["iv_inventoryId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+						echo '</td>';
+					echo '</tr>';
+				}
+				echo '</tbody>';
+			echo '</table>';
+			echo '</div>';
+		}else{
+			echo '<div class="alert alert-warning" role="alert">';
+				echo 'Nenhum registro localizado!';
+			echo '</div>';
+		}
+
+        $its = $Inventory->listaInventoryItens();
+		
+        //itens no estoque
+		if(count($its) > 0){
+			echo '<div class="table-responsive">';
+			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
+				echo '<thead>';
+					echo '<tr>';
+						echo '<th style="text-align: left">Id</th>';
+                        echo '<th style="text-align: left">Produto</th>';
+						echo '<th style="text-align: center">Local (Endereço)</th>';
+                        echo '<th style="text-align: center">Quantidade</th>';
+                        echo '<th style="text-align: center">Editar</th>';
+                        echo '<th style="text-align: center">Deletar</th>';
+					echo '</tr>';
+				echo '</thead>';
+				echo '<tbody style="cursor: row-resize">';
+                foreach($its as $i){
+					echo '<tr>';
+						echo '<td style="text-align: left">'.$i["ivt_inventoryItensId"].'</td>';
+						echo '<td style="text-align: left">'.$i["pr_description"].'</td>';
+                        echo '<td style="text-align: center">'.$i["iv_location"].'</td>';
+                        echo '<td style="text-align: center">'.$i["ivt_quantity"].'</td>';
+                        echo '<td style="text-align: center">';
+							echo '<i title="Editar" onclick="get_itemInv(\''.$i["ivt_inventoryItensId"].'\')" class="fas fa-edit" style="cursor: pointer"></i>';
+						echo '</td>';
+                        echo '<td style="text-align: center">';
+							echo '<i title="Deletar" onclick="del_itemInv(\''.$i["ivt_inventoryItensId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+						echo '</td>';
+					echo '</tr>';
+				}
+				echo '</tbody>';
+			echo '</table>';
+			echo '</div>';
+		}else{
+			echo '<div class="alert alert-warning" role="alert">';
+				echo 'Nenhum registro localizado!';
+			echo '</div>';
+		}
+	}
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Buscar conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "inclui_inventory"){
+        $Inventory = new Inventory();
+
+        $location = $_POST["location"];
+
+        $res = $Inventory->createInventory($location);
+		
+        echo $res;
+	}
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Busca conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "get_inventory"){
+        $Inventory = new Inventory();
+
+        $id = $_POST["id"];
+
+        $res = $Inventory->getLocation($id);
+		
+        if(count($res) > 0){
+            $res[0]['iv_location'] = utf8_encode($res[0]['iv_location']);
+            $a_retorno["res"] = $res;
+            $c_retorno = json_encode($a_retorno["res"]);
+            print_r($c_retorno);
+        }
+	}
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Edita conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "edit_inventory"){
+        $Inventory = new Inventory();
+
+        $id = $_POST["id"];
+        $location = $_POST["location"];
+
+        $res = $Inventory->editInvent($id, $location);
+		
+        echo $res;
+	}
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Deleta conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "del_inventory"){
+        $Inventory = new Inventory();
+
+        $id = $_POST["id"];
+
+        $res = $Inventory->deleteInvent($id);
+		
+        echo $res;
+	}
+
+    //Funções de Itens no estoque
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Buscar conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "inclui_invItens"){
+        $Inventory = new Inventory();
+
+        $product = $_POST["product"];
+        $location = $_POST["location"];
+        $quantity = $_POST["quantity"];
+    
+        $res = $Inventory->createInventoryItems($location, $product, $quantity);
+		
+        echo $res;
+	}
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Busca conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "get_invItem"){
+        $Inventory = new Inventory();
+
+        $id = $_POST["id"];
+
+        $res = $Inventory->getItem($id);
+		
+        if(count($res) > 0){
+            $a_retorno["res"] = $res;
+            $c_retorno = json_encode($a_retorno["res"]);
+            print_r($c_retorno);
+        }
+	}
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Edita conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "edit_invItem"){
+        $Inventory = new Inventory();
+
+        $id = $_POST["id"];
+        $quantity = $_POST["quantity"];
+
+        $res = $Inventory->editInventItem($id, $quantity);
+		
+        echo $res;
+	}
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Deleta conteúdo:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	if($_GET["a"] == "del_invItem"){
+        $Inventory = new Inventory();
+
+        $id = $_POST["id"];
+
+        $res = $Inventory->deleteInventItem($id);
+		
+        echo $res;
+	}
+
+    die();
+}
+
+// Includes para o script:
+include("header.php");
+include("dashboard.php");
+
+?>
+<link href="./css/timeline.css" rel="stylesheet">
+
+<script type="text/javascript" src="./assets/js/jquery-3.6.0.min.js"></script>
+<script src="./assets/js/jquery-ui.js"></script>
+<script type="text/javascript">
+	
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Listar itens:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	const lista_itens = () => {
+		if(ajax_div){ ajax_div.abort(); }
+		ajax_div = $.ajax({
+			cache: false,
+			async: true,
+			url: '?a=lista_inventory',
+			type: 'post',
+			data: { },
+			beforeSend: function(){
+				$('#div_conteudo').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
+			},
+			success: function retorno_ajax(retorno) {
+				$('#div_conteudo').html(retorno); 
+			}
+		});
+	}
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Incluir itens:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	const incluiInventory = () => {
+        if(ajax_div){ ajax_div.abort(); }
+		ajax_div = $.ajax({
+			cache: false,
+			async: true,
+			url: '?a=inclui_inventory',
+			type: 'post',
+			data: { 
+                location: $("#frm_nome").val(),
+            },
+			beforeSend: function(){
+                $('#mod_formul').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
+			},
+			success: function retorno_ajax(retorno) {
+				if(retorno == "OK"){
+                    $('#mod_formul').modal('hide');
+					location.reload();
+                    lista_itens();  
+                }else{
+                    alert("ERRO AO CADASTRAR ESTOQUE! " + retorno);
+                }
+			}
+		});
+	}
+
+	// Evento inicial:
+	$(document).ready(function() {
+		//setInterval(function(){ list_items(); }, 57000); list_items();
+		lista_itens();
+	});
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Editar itens:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	const get_item = (id) => {
+        if(ajax_div){ ajax_div.abort(); }
+		ajax_div = $.ajax({
+			cache: false,
+			async: true,
+			url: '?a=get_inventory',
+			type: 'post',
+			data: { 
+                id: id,
+            },
+			beforeSend: function(){
+                $('#mod_formul_edit').modal("show");
+			},
+			success: function retorno_ajax(retorno) {
+				if(retorno != ""){
+                    $("#frm_id").val(id);
+                    
+					var obj_ret = JSON.parse(retorno);
+
+					$("#frm_nome_edit").val(obj_ret[0].iv_location);
+
+				}
+			}
+		});
+	}
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Editar itens:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	const editInventory = () => {
+        if(ajax_div){ ajax_div.abort(); }
+		ajax_div = $.ajax({
+			cache: false,
+			async: true,
+			url: '?a=edit_inventory',
+			type: 'post',
+			data: { 
+                id: $("#frm_id").val(),
+                location: $("#frm_nome_edit").val(),
+            },
+			beforeSend: function(){
+                $('#mod_formul_edit').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
+			},
+			success: function retorno_ajax(retorno) {
+				if(retorno == "OK"){
+                    $('#mod_formul_edit').modal('hide');
+                    location.reload();
+                    lista_itens();  
+                }else{
+                    alert("ERRO AO EDITAR ESTOQUE! " + retorno);
+                }
+			}
+		});
+	}
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Excluir usuário:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	function del_item(id){
+        if( confirm( "Deseja excluir o estoque "+ id +"?")){
+            if(ajax_div){ ajax_div.abort(); }
+		        ajax_div = $.ajax({
+		    	cache: false,
+		    	async: true,
+		    	url: '?a=del_inventory',
+		    	type: 'post',
+		    	data: { 
+                    id: id,
+                },
+		    	success: function retorno_ajax(retorno) {
+                    if(retorno == "OK"){
+						location.reload();
+                    	lista_itens();  
+                	}else{
+                    	alert("ERRO AO DELETAR ESTOQUE! " + retorno);
+                	}
+		    	}
+		    });
+        }else{
+            lista_itens();
+        }
+	}
+
+    //Funções para tratar itens nos estoques
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Incluir itens:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	const incluiInvItem = () => {
+        if(ajax_div){ ajax_div.abort(); }
+		ajax_div = $.ajax({
+			cache: false,
+			async: true,
+			url: '?a=inclui_invItens',
+			type: 'post',
+			data: { 
+                product : $("#frm_prodctId").val(),
+                location: $("#frm_InvetId").val(),
+                quantity: $("#frm_quantity").val(),
+            },
+			beforeSend: function(){
+                $('#mod_formul_item').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
+			},
+			success: function retorno_ajax(retorno) {
+				if(retorno == "OK"){
+                    $('#mod_formul_item').modal('hide');
+					location.reload();
+                    lista_itens();  
+                }else{
+                    alert("ERRO AO CADASTRAR ITEM NO ESTOQUE! " + retorno);
+                }
+			}
+		});
+	}
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Editar itens:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	const get_itemInv = (id) => {
+        if(ajax_div){ ajax_div.abort(); }
+		ajax_div = $.ajax({
+			cache: false,
+			async: true,
+			url: '?a=get_invItem',
+			type: 'post',
+			data: { 
+                id: id,
+            },
+			beforeSend: function(){
+                $('#mod_formul_edit_item').modal("show");
+			},
+			success: function retorno_ajax(retorno) {
+				if(retorno != ""){
+                    $("#frm_idItem").val(id);
+                    
+					var obj_ret = JSON.parse(retorno);
+                    $("#frm_prodctIdEdit").val(obj_ret[0].ivt_productId);
+                    $("#frm_InvetIdEdit").val(obj_ret[0].ivt_inventoryId);
+                    $("#frm_quantityEdit").val(obj_ret[0].ivt_quantity);
+				}
+			}
+		});
+	}
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Editar itens:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	const editInvItem = () => {
+        if(ajax_div){ ajax_div.abort(); }
+		ajax_div = $.ajax({
+			cache: false,
+			async: true,
+			url: '?a=edit_invItem',
+			type: 'post',
+			data: { 
+                id: $("#frm_idItem").val(),
+                quantity: $("#frm_quantityEdit").val(),
+            },
+			beforeSend: function(){
+                $('#mod_formul_edit').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
+			},
+			success: function retorno_ajax(retorno) {
+				if(retorno == "OK"){
+                    $('#mod_formul_edit').modal('hide');
+                    location.reload();
+                    lista_itens();  
+                }else{
+                    alert("ERRO AO EDITAR ITEM NO ESTOQUE! " + retorno);
+                }
+			}
+		});
+	}
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Excluir usuário:
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	var ajax_div = $.ajax(null);
+	function del_itemInv(id){
+        if( confirm( "Deseja excluir o item "+ id +" do estoque?")){
+            if(ajax_div){ ajax_div.abort(); }
+		        ajax_div = $.ajax({
+		    	cache: false,
+		    	async: true,
+		    	url: '?a=del_invItem',
+		    	type: 'post',
+		    	data: { 
+                    id: id,
+                },
+		    	success: function retorno_ajax(retorno) {
+                    if(retorno == "OK"){
+						location.reload();
+                    	lista_itens();  
+                	}else{
+                    	alert("ERRO AO DELETAR ITEM! " + retorno);
+                	}
+		    	}
+		    });
+        }else{
+            lista_itens();
+        }
+	}
+
+</script>
+
+<!-- Modal formulário -->
+<div class="modal" id="mod_formul">
+	<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl" style="max-width: 70%;">
+		<div class="modal-content">
+			<div class="modal-header" style="align-items: center">
+				<div style="display: flex; align-items: center">
+					<div style="margin-right: 5px">
+						<h2 style="margin: 0"><span class="badge bg-info text-white" style="padding: 8px" id="span_endereco_nome"></span></h2>
+					</div>
+					<div>
+						<h5 id="tit_frm_formul" class="modal-title">Incluir Novo Estoque</h5>
+					</div>
+				</div>
+				<button type="button" style="cursor: pointer; border: 1px solid #ccc; border-radius: 10px" aria-label="Fechar" onclick="$('#mod_formul').modal('hide');">X</button>
+			</div>
+			<div class="modal-body modal-dialog-scrollable">
+				<form id="frm_general" name="frm_general">
+					<div class="row mb-3">
+						<div class="col">
+							<label for="frm_nome" class="form-label">Local (Endereço):</label>
+							<input type="text" style="text-align: left" aria-describedby="frm_nome" class="form-control form-control-lg" name="frm_nome" id="frm_nome" placeholder="">
+						</div>
+                    </div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" onclick="$('#mod_formul').modal('hide');">Cancelar</button>
+				<button type="button" class="btn btn-primary" id="frm_OK" onclick="incluiInventory();"><img id="img_btn_ok" style="width: 15px; display: none; margin-right: 10px">OK</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal formulário -->
+<div class="modal" id="mod_formul_edit">
+	<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl" style="max-width: 70%;">
+		<div class="modal-content">
+			<div class="modal-header" style="align-items: center">
+				<div style="display: flex; align-items: center">
+					<div style="margin-right: 5px">
+						<h2 style="margin: 0"><span class="badge bg-info text-white" style="padding: 8px" id="span_endereco_nome"></span></h2>
+					</div>
+					<div>
+						<h5 id="tit_frm_formul_edit" class="modal-title">Editar Estoque</h5>
+					</div>
+				</div>
+				<button type="button" style="cursor: pointer; border: 1px solid #ccc; border-radius: 10px" aria-label="Fechar" onclick="$('#mod_formul').modal('hide');">X</button>
+			</div>
+			<div class="modal-body modal-dialog-scrollable">
+				<form id="frm_general_edit" name="frm_general">
+					<div class="row mb-3">
+						<div class="col">
+                            <input type="text" style="text-align: left" aria-describedby="frm_id" class="form-control form-control-lg" name="frm_id" id="frm_id" hidden>
+							<label for="frm_nome_edit" class="form-label">Local (Endereço):</label>
+							<input type="text" style="text-align: left" aria-describedby="frm_nome_edit" class="form-control form-control-lg" name="frm_nome_edit" id="frm_nome_edit" placeholder="">
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" onclick="$('#mod_formul_edit').modal('hide');">Cancelar</button>
+				<button type="button" class="btn btn-primary" id="frm_OK" onclick="editInventory();"><img id="img_btn_ok" style="width: 15px; display: none; margin-right: 10px">OK</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Modal formulário -->
+<div class="modal" id="mod_formul_item">
+	<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl" style="max-width: 70%;">
+		<div class="modal-content">
+			<div class="modal-header" style="align-items: center">
+				<div style="display: flex; align-items: center">
+					<div style="margin-right: 5px">
+						<h2 style="margin: 0"><span class="badge bg-info text-white" style="padding: 8px" id="span_endereco_nome"></span></h2>
+					</div>
+					<div>
+						<h5 id="tit_frm_formul" class="modal-title">Incluir Novo Item no Estoque</h5>
+					</div>
+				</div>
+				<button type="button" style="cursor: pointer; border: 1px solid #ccc; border-radius: 10px" aria-label="Fechar" onclick="$('#mod_formul').modal('hide');">X</button>
+			</div>
+			<div class="modal-body modal-dialog-scrollable">
+				<form id="frm_general" name="frm_general">
+                    <div class="row mb-3">
+					    <div class="col">
+							<label for="frm_prodctId" class="form-label">Produto</label>
+                            <select class="form-select form-control-lg" size="1" id="frm_prodctId" name="frm_prodctId">
+								<option value="" selected></option>
+								<?php
+                                    //include("./script/classes/Product.php");
+									//$Product = new Product();
+                                    include_once("db.php");
+                                    $db = new Database();
+
+									$res = $db->_query("SELECT pr_productId, pr_description FROM tb_products");
+
+									if(count($res) > 0){
+										foreach($res as $r){
+											echo '<option value="'.$r["pr_productId"].'">'.trim($r["pr_description"]).'</option>';
+										}
+									}
+								?>
+							</select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+						<div class="col">
+							<label for="frm_InvetId" class="form-label">Local</label>
+                            <select class="form-select form-control-lg" size="1" id="frm_InvetId" name="frm_InvetId">
+								<option value="" selected></option>
+								<?php
+                                    //include("./script/classes/Inventory.php");
+									//$Inventory = new Inventory();
+                                    include_once("db.php");
+                                    $db = new Database();
+
+									$res = $db->_query("SELECT iv_inventoryId, iv_location FROM tb_inventory");
+
+									if(count($res) > 0){
+										foreach($res as $r){
+											echo '<option value="'.$r["iv_inventoryId"].'">'.trim($r["iv_location"]).'</option>';
+										}
+									}
+								?>
+							</select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+						<div class="col">
+							<label for="frm_quantity" class="form-label">Quantidade</label>
+							<input type="number" style="text-align: left" aria-describedby="frm_quantity" class="form-control form-control-lg" name="frm_quantity" id="frm_quantity" placeholder="">
+						</div>
+                    </div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" onclick="$('#mod_formul_item').modal('hide');">Cancelar</button>
+				<button type="button" class="btn btn-primary" id="frm_OK" onclick="incluiInvItem();"><img id="img_btn_ok" style="width: 15px; display: none; margin-right: 10px">OK</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal formulário -->
+<div class="modal" id="mod_formul_edit_item">
+	<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl" style="max-width: 70%;">
+		<div class="modal-content">
+			<div class="modal-header" style="align-items: center">
+				<div style="display: flex; align-items: center">
+					<div style="margin-right: 5px">
+						<h2 style="margin: 0"><span class="badge bg-info text-white" style="padding: 8px" id="span_endereco_nome"></span></h2>
+					</div>
+					<div>
+						<h5 id="tit_frm_formul_edit" class="modal-title">Editar Item no Estoque</h5>
+					</div>
+				</div>
+				<button type="button" style="cursor: pointer; border: 1px solid #ccc; border-radius: 10px" aria-label="Fechar" onclick="$('#mod_formul').modal('hide');">X</button>
+			</div>
+			<div class="modal-body modal-dialog-scrollable">
+				<form id="frm_general_edit" name="frm_general">
+                    <div class="row mb-3">
+						<div class="col">
+                        <input type="text" style="text-align: left" aria-describedby="frm_idItem" class="form-control form-control-lg" name="frm_idItem" id="frm_idItem" hidden>
+							<label for="frm_prodctIdEdit" class="form-label">Produto</label>
+                            <select class="form-select form-control-lg" size="1" id="frm_prodctIdEdit" name="frm_prodctIdEdit" disabled>
+								<option value="" selected></option>
+								<?php
+									//include("./script/classes/Product.php");
+									//$Product = new Product();
+                                    include_once("db.php");
+                                    $db = new Database();
+
+									$res = $db->_query("SELECT pr_productId, pr_description FROM tb_products");
+
+									if(count($res) > 0){
+										foreach($res as $r){
+											echo '<option value="'.$r["pr_productId"].'">'.trim($r["pr_description"]).'</option>';
+										}
+									}
+								?>
+							</select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+						<div class="col">
+							<label for="frm_InvetIdEdit" class="form-label">Local</label>
+                            <select class="form-select form-control-lg" size="1" id="frm_InvetIdEdit" name="frm_InvetIdEdit" disabled>
+								<option value="" selected></option>
+								<?php
+                                    include_once("db.php");
+                                    $db = new Database();
+
+									$res = $db->_query("SELECT iv_inventoryId, iv_location FROM tb_inventory");
+
+									if(count($res) > 0){
+										foreach($res as $r){
+											echo '<option value="'.$r["iv_inventoryId"].'">'.trim($r["iv_location"]).'</option>';
+										}
+									}
+								?>
+							</select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+						<div class="col">
+							<label for="frm_quantityEdit" class="form-label">Quantidade</label>
+							<input type="number" style="text-align: left" aria-describedby="frm_quantityEdit" class="form-control form-control-lg" name="frm_quantityEdit" id="frm_quantityEdit" placeholder="">
+						</div>
+                    </div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" onclick="$('#mod_formul_edit_item').modal('hide');">Cancelar</button>
+				<button type="button" class="btn btn-primary" id="frm_OK" onclick="editInvItem();"><img id="img_btn_ok" style="width: 15px; display: none; margin-right: 10px">OK</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal geral -->
+<div class="modal" id="mod_general" tabindex="-1" style="z-index: 1400 !important">
+	<div id="mod_general" class="modal-dialog modal-dialog-scrollable modal-xl" tabindex="-1">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 id="tit_frm_general" class="modal-title"></h5>
+				<button type="button" id="btn_general_close" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+			</div>
+			<div class="modal-body modal-dialog-scrollable" id="modmenu_content">
+			</div>
+		</div>
+	</div>
+</div>
+
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+	<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+		<div style="display: flex; flex: 1">
+			<div style="flex: 1">
+				<h1 class="h2">Estoques X Itens</h1>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col">
+			<div class="input-group mb-3">
+				<button type="button" onclick="$('#mod_formul').modal('show');" class="btn btn-primary"><i class="fa fa-plus-circle" style="margin-right: 5px"></i>Incluir Estoque</button>
+			</div>
+		</div>
+        <div class="col">
+			<div class="input-group mb-3">
+				<button type="button" onclick="$('#mod_formul_item').modal('show');" class="btn btn-primary"><i class="fa fa-plus-circle" style="margin-right: 5px"></i>Incluir Item no Estoque</button>
+			</div>
+		</div>
+	</div>
+
+	<div id="div_conteudo"></div>
+</main>
+
+<?php include("bottom.php"); ?>
