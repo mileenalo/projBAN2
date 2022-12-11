@@ -25,9 +25,13 @@ class AdjustInventory {
      */
     public function ajustInventItem($itemId, $quantity){
         
-        $db = new Database();
+        $db = new DBMongo();
 
-        $upInvIt = $db->_exec("UPDATE tb_inventory_itens SET ivt_quantity = {$quantity} WHERE ivt_inventoryItensId = {$itemId}");
+        $table = "tb_inventory_itens";
+        $doc = [ "ivt_quantity" => $quantity ];
+    
+        $upInvIt = $db->update($itemId, $doc, $table);
+        
         if($upInvIt == true){
             return "OK";
         }else{

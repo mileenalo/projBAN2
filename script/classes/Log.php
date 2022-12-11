@@ -28,18 +28,16 @@ class Logs {
      * @param  $name
      */
     public function createLog($userId, $message){
-        $db = new Database();
+        $db = new DBMongo(); 
 
         $date = date("Y-m-d H:m:s");
 
-        $log = $db->_exec("INSERT INTO tb_logs (lg_userId, lg_date, lg_description)
-                             VALUES ({$userId}, '{$date}', '{$message}') ");
-        
-        if($log == true){
-            return $log;
-        }else{
-            return 0;
-        }
+        $doc = [ "lg_userId" => $userId, "lg_date" => $date, "lg_description" => $message ];
+        $table = "tb_logs";
+
+        $log = $db->insert($doc, $table);
+    
+        return $log;
     }
 
     /**

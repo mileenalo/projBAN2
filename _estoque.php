@@ -14,7 +14,7 @@ if(isset($_GET["a"])){
 
         $res = $Inventory->listaInventory();
 		//parte de estoques
-		if(count($res) > 0){
+		if($res != ""){
 			echo '<div class="table-responsive">';
 			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 				echo '<thead>';
@@ -28,13 +28,13 @@ if(isset($_GET["a"])){
 				echo '<tbody style="cursor: row-resize">';
                 foreach($res as $r){
 					echo '<tr>';
-						echo '<td style="text-align: left">'.$r["iv_inventoryId"].'</td>';
-						echo '<td style="text-align: center">'.$r["iv_location"].'</td>';
+						echo '<td style="text-align: left">'.$r->_id.'</td>';
+						echo '<td style="text-align: center">'.$r->iv_location.'</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Editar" onclick="get_item(\''.$r["iv_inventoryId"].'\')" class="fas fa-edit" style="cursor: pointer"></i>';
+							echo '<i title="Editar" onclick="get_item(\''.$r->_id.'\')" class="fas fa-edit" style="cursor: pointer"></i>';
 						echo '</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Deletar" onclick="del_item(\''.$r["iv_inventoryId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+							echo '<i title="Deletar" onclick="del_item(\''.$r->_id.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
 						echo '</td>';
 					echo '</tr>';
 				}
@@ -50,7 +50,7 @@ if(isset($_GET["a"])){
         $its = $Inventory->listaInventoryItens();
 		
         //itens no estoque
-		if(count($its) > 0){
+		if($its != ""){
 			echo '<div class="table-responsive">';
 			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 				echo '<thead>';
@@ -66,15 +66,15 @@ if(isset($_GET["a"])){
 				echo '<tbody style="cursor: row-resize">';
                 foreach($its as $i){
 					echo '<tr>';
-						echo '<td style="text-align: left">'.$i["ivt_inventoryItensId"].'</td>';
-						echo '<td style="text-align: left">'.$i["pr_description"].'</td>';
-                        echo '<td style="text-align: center">'.$i["iv_location"].'</td>';
-                        echo '<td style="text-align: center">'.$i["ivt_quantity"].'</td>';
+						echo '<td style="text-align: left">'.$i->_id.'</td>';
+						echo '<td style="text-align: left">'.$i->pr_description.'</td>';
+                        echo '<td style="text-align: center">'.$i->iv_location.'</td>';
+                        echo '<td style="text-align: center">'.$i->ivt_quantity.'</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Editar" onclick="get_itemInv(\''.$i["ivt_inventoryItensId"].'\')" class="fas fa-edit" style="cursor: pointer"></i>';
+							echo '<i title="Editar" onclick="get_itemInv(\''.$i->_id.'\')" class="fas fa-edit" style="cursor: pointer"></i>';
 						echo '</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Deletar" onclick="del_itemInv(\''.$i["ivt_inventoryItensId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+							echo '<i title="Deletar" onclick="del_itemInv(\''.$i->_id.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
 						echo '</td>';
 					echo '</tr>';
 				}
@@ -109,11 +109,10 @@ if(isset($_GET["a"])){
         $id = $_POST["id"];
 
         $res = $Inventory->getLocation($id);
-		
-        if(count($res) > 0){
-            $res[0]['iv_location'] = utf8_encode($res[0]['iv_location']);
-            $a_retorno["res"] = $res;
-            $c_retorno = json_encode($a_retorno["res"]);
+		$a_retorno = array();
+        foreach($res as $r){
+			array_push($a_retorno, utf8_encode($r->iv_location));
+            $c_retorno = json_encode($a_retorno);
             print_r($c_retorno);
         }
 	}
@@ -172,9 +171,12 @@ if(isset($_GET["a"])){
 
         $res = $Inventory->getItem($id);
 		
-        if(count($res) > 0){
-            $a_retorno["res"] = $res;
-            $c_retorno = json_encode($a_retorno["res"]);
+		$a_retorno = array();
+        foreach($res as $r){
+			array_push($a_retorno, $r->ivt_productId);
+			array_push($a_retorno, $r->ivt_inventoryId);
+			array_push($a_retorno, $r->ivt_quantity);
+            $c_retorno = json_encode($a_retorno);
             print_r($c_retorno);
         }
 	}
@@ -259,13 +261,9 @@ include("dashboard.php");
                 $('#mod_formul').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
 			},
 			success: function retorno_ajax(retorno) {
-				if(retorno == "OK"){
-                    $('#mod_formul').modal('hide');
-					location.reload();
-                    lista_itens();  
-                }else{
-                    alert("ERRO AO CADASTRAR ESTOQUE! " + retorno);
-                }
+                $('#mod_formul').modal('hide');
+				location.reload();
+                lista_itens();  
 			}
 		});
 	}
@@ -294,12 +292,13 @@ include("dashboard.php");
                 $('#mod_formul_edit').modal("show");
 			},
 			success: function retorno_ajax(retorno) {
+				console.log(retorno)
 				if(retorno != ""){
                     $("#frm_id").val(id);
                     
 					var obj_ret = JSON.parse(retorno);
 
-					$("#frm_nome_edit").val(obj_ret[0].iv_location);
+					$("#frm_nome_edit").val(obj_ret[0]);
 
 				}
 			}
@@ -386,13 +385,9 @@ include("dashboard.php");
                 $('#mod_formul_item').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
 			},
 			success: function retorno_ajax(retorno) {
-				if(retorno == "OK"){
-                    $('#mod_formul_item').modal('hide');
-					location.reload();
-                    lista_itens();  
-                }else{
-                    alert("ERRO AO CADASTRAR ITEM NO ESTOQUE! " + retorno);
-                }
+                $('#mod_formul_item').modal('hide');
+				location.reload();
+                lista_itens();  
 			}
 		});
 	}
@@ -419,9 +414,9 @@ include("dashboard.php");
                     $("#frm_idItem").val(id);
                     
 					var obj_ret = JSON.parse(retorno);
-                    $("#frm_prodctIdEdit").val(obj_ret[0].ivt_productId);
-                    $("#frm_InvetIdEdit").val(obj_ret[0].ivt_inventoryId);
-                    $("#frm_quantityEdit").val(obj_ret[0].ivt_quantity);
+                    $("#frm_prodctIdEdit").val(obj_ret[0]);
+                    $("#frm_InvetIdEdit").val(obj_ret[1]);
+                    $("#frm_quantityEdit").val(obj_ret[2]);
 				}
 			}
 		});
@@ -579,17 +574,15 @@ include("dashboard.php");
                             <select class="form-select form-control-lg" size="1" id="frm_prodctId" name="frm_prodctId">
 								<option value="" selected></option>
 								<?php
-                                    //include("./script/classes/Product.php");
-									//$Product = new Product();
-                                    include_once("db.php");
-                                    $db = new Database();
+                                    include_once("db_mongo.php");
+									$db = new DBMongo(); 
+    
+        							$field = "pr_description";
+        							$table = "tb_products";
+        							$res = $db->searchAll($field, $table);
 
-									$res = $db->_query("SELECT pr_productId, pr_description FROM tb_products");
-
-									if(count($res) > 0){
-										foreach($res as $r){
-											echo '<option value="'.$r["pr_productId"].'">'.trim($r["pr_description"]).'</option>';
-										}
+									foreach($res as $r){
+										echo '<option value="'.$r->_id.'">'.trim($r->pr_description).'</option>';
 									}
 								?>
 							</select>
@@ -601,17 +594,15 @@ include("dashboard.php");
                             <select class="form-select form-control-lg" size="1" id="frm_InvetId" name="frm_InvetId">
 								<option value="" selected></option>
 								<?php
-                                    //include("./script/classes/Inventory.php");
-									//$Inventory = new Inventory();
-                                    include_once("db.php");
-                                    $db = new Database();
+									include_once("db_mongo.php");
+									$db = new DBMongo(); 
+    
+        							$field = "iv_location";
+        							$table = "tb_inventory";
+        							$res = $db->searchAll($field, $table);
 
-									$res = $db->_query("SELECT iv_inventoryId, iv_location FROM tb_inventory");
-
-									if(count($res) > 0){
-										foreach($res as $r){
-											echo '<option value="'.$r["iv_inventoryId"].'">'.trim($r["iv_location"]).'</option>';
-										}
+									foreach($res as $r){
+										echo '<option value="'.$r->_id.'">'.trim($r->iv_location).'</option>';
 									}
 								?>
 							</select>
@@ -657,17 +648,15 @@ include("dashboard.php");
                             <select class="form-select form-control-lg" size="1" id="frm_prodctIdEdit" name="frm_prodctIdEdit" disabled>
 								<option value="" selected></option>
 								<?php
-									//include("./script/classes/Product.php");
-									//$Product = new Product();
-                                    include_once("db.php");
-                                    $db = new Database();
+									include_once("db_mongo.php");
+									$db = new DBMongo(); 
+    
+        							$field = "pr_description";
+        							$table = "tb_products";
+        							$res = $db->searchAll($field, $table);
 
-									$res = $db->_query("SELECT pr_productId, pr_description FROM tb_products");
-
-									if(count($res) > 0){
-										foreach($res as $r){
-											echo '<option value="'.$r["pr_productId"].'">'.trim($r["pr_description"]).'</option>';
-										}
+									foreach($res as $r){
+										echo '<option value="'.$r->_id.'">'.trim($r->pr_description).'</option>';
 									}
 								?>
 							</select>
@@ -679,16 +668,16 @@ include("dashboard.php");
                             <select class="form-select form-control-lg" size="1" id="frm_InvetIdEdit" name="frm_InvetIdEdit" disabled>
 								<option value="" selected></option>
 								<?php
-                                    include_once("db.php");
-                                    $db = new Database();
+                                   	include_once("db_mongo.php");
+								   	$db = new DBMongo(); 
+									
+								   	$field = "iv_location";
+								   	$table = "tb_inventory";
+								   	$res = $db->searchAll($field, $table);
 
-									$res = $db->_query("SELECT iv_inventoryId, iv_location FROM tb_inventory");
-
-									if(count($res) > 0){
-										foreach($res as $r){
-											echo '<option value="'.$r["iv_inventoryId"].'">'.trim($r["iv_location"]).'</option>';
-										}
-									}
+								   	foreach($res as $r){
+										echo '<option value="'.$r->_id.'">'.trim($r->iv_location).'</option>';
+								   	}
 								?>
 							</select>
                         </div>

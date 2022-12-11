@@ -26,13 +26,14 @@ class Transactions {
      * @param  $name
      */
     public function createTransaction($customerId, $type, $invoiceId, $message, $date){
+       
+        $db = new DBMongo(); 
+    
+        $doc = [ "tr_customerId" => new MongoDB\BSON\ObjectId($customerId), "tr_paymentId" => $type, "tr_invoiceId" => new MongoDB\BSON\ObjectId($invoiceId), "tr_date" => $date, "tr_messagem" => $message ];
+        $table = "tb_transactions";
 
-        //include("./db.php");
-        $db = new Database();
-
-        $transaction = $db->_exec("INSERT INTO tb_transactions (tr_customerId, tr_paymentId, tr_invoiceId, tr_date, tr_messagem) 
-                                    VALUES ({$customerId}, {$type}, {$invoiceId}, '{$date}', '{$message}') ");
-        
+        $transaction = $db->insert($doc, $table);
+       
         if($transaction == true){
             return "OK";
         }else{

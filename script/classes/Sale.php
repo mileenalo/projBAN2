@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-include("./db.php");
+include("./db_mongo.php");
 
 class Sale {
 
@@ -67,111 +67,103 @@ class Sale {
             $message = "Pagamento com boleto bancario";
         }
 
-        $db = new Database();
-        $cod = $db->_query("SELECT * FROM tb_sales WHERE sl_saleId = {$id}");
+        $db = new DBMongo(); 
         
-        if(count($cod) > 0 ){
+        $table = "tb_sales";
+       
+        $cod = $db->search($id, $table);
 
-            foreach($cod as $c){
-                $date = $c["sl_date"];
-                $finalPrice = $c["sl_finalPrice"];
-                $customerId = $c["sl_customerId"];
-            }
-
-            $numInvoice = $Invoice->createInvoice($date, $finalPrice);
-
-            $numTransaction = $Transaction->createTransaction($customerId, $type, $numInvoice, $message, $date);
-
-            $addInv = $db->_exec("UPDATE tb_sales SET sl_invoiceId = {$numInvoice}, sl_paymentId = {$type}, sl_statusPayment = 1 WHERE sl_saleId = {$id}");
-            
-            $ivt = $db->_query("SELECT ivt_inventoryItensId, ivt_quantity, sli_quantity FROM tb_inventory_itens
-                                INNER JOIN tb_products ON pr_productId = ivt_productId
-                                INNER JOIN tb_sale_items ON sli_productId = pr_productId
-                                WHERE sli_saleId = {$id} ");
-        
-            if(count($ivt) > 0 ){
-                $quantity = 0;
-                foreach($ivt as $i){
-                    $quantity = $i["ivt_quantity"] - $i["sli_quantity"];
-                    $invent = $Inventory->ajustInventItem($i["ivt_inventoryItensId"], $quantity);
-                }
-            }
-
-            if($addInv == true){
-                return "OK";
-            }else{
-                return "ERRO: ". $addInv;
-            }
-            
-        }else{
-            return "PEDIDO NAO ENCONTRADO!";
+        foreach($cod as $c){
+            $date = $c->sl_date;
+            $finalPrice = $c->sl_finalPrice;
+            $customerId = $c->sl_customerId;
         }
+
+        $numInvoice = $Invoice->createInvoice($date, $finalPrice);
+        $numTransaction = $Transaction->createTransaction($customerId, $type, $numInvoice, $message, $date);
+       
+        $doc = [ "sl_invoiceId" => new MongoDB\BSON\ObjectId($numInvoice), "sl_statusPayment" => 1 ];
+
+        $upInvIt = $db->update($id, $doc, $table);
+        if($upInvIt == true){
+            return "OK";
+        }else{
+            return "ERRO: " . $upInvIt;
+        }
+       
+        /*$ivt = $db->_query("SELECT ivt_inventoryItensId, ivt_quantity, sli_quantity FROM tb_inventory_itens
+                            INNER JOIN tb_products ON pr_productId = ivt_productId
+                            INNER JOIN tb_sale_items ON sli_productId = pr_productId
+                            WHERE sli_saleId = {$id} ");
+    
+        if(count($ivt) > 0 ){
+            $quantity = 0;
+            foreach($ivt as $i){
+                $quantity = $i["ivt_quantity"] - $i["sli_quantity"];
+                $invent = $Inventory->ajustInventItem($i["ivt_inventoryItensId"], $quantity);
+            }
+        }
+        if($addInv == true){
+            return "OK";
+        }else{
+            return "ERRO: ". $addInv;
+        }*/
+
     }
 
     /**
      * @param  $name
      */
     public function createSale($customer_id, $seller_id, $date){
-        $db = new Database();
-        
-        $sale = $db->_exec("INSERT INTO tb_sales (sl_customerId, sl_sellerId, sl_date, sl_finalPrice, sl_quantity, sl_invoiceId, sl_statusPayment)
-                            VALUES({$customer_id}, {$seller_id}, '{$date}', 0.0, 0, NULL, 2) ");
-        $numSale = $db->_query("SELECT sl_saleId 
-                                FROM tb_sales 
-                                WHERE sl_customerId = {$customer_id} 
-                                AND sl_sellerId = {$seller_id} 
-                                AND sl_date = '{$date}' 
-                                AND sl_quantity = 0 
-                                ORDER BY sl_saleId DESC LIMIT 1");
-        foreach($numSale as $n){
-            $codSale = $n["sl_saleId"];
-        }
+        $db = new DBMongo(); 
+    
+        $doc = [ "sl_customerId" => new MongoDB\BSON\ObjectId($customer_id), "sl_sellerId" => new MongoDB\BSON\ObjectId($seller_id), "sl_date" => $date, "sl_finalPrice" => 0.0, "sl_quantity" => 0, "sl_invoiceId" => null, "sl_statusPayment" => 2 ];
+        $table = "tb_sales";
 
-        if($sale == true){
-            return $codSale;
-        }else{
-            return 0;
-        }
+        $sale = $db->insert($doc, $table);
+    
+        return $sale;
     }
 
      /**
      * @param  $name
      */
     public function editItens($id, $product_id, $quantity, $type){
-        $db = new Database();
+        $db = new DBMongo(); 
 
         //insere ou altera 
         if($type == 1){
+            $table = "tb_products";
+       
+            $tot = $db->search($product_id, $table);
+            $totPrice = 0;
+            foreach($tot as $t){
+                $totPrice = $t->pr_price * $quantity;
+            }
+    
+            $doc = [ "sli_saleId" => new MongoDB\BSON\ObjectId($id), "sli_productId" => new MongoDB\BSON\ObjectId($product_id), "sli_quantity" => $quantity, "sli_totalPrice" => $totPrice ];
+            $table = "tb_sale_items";
 
-            $tot = $db->_query("SELECT pr_price FROM tb_products WHERE pr_productId = {$product_id}");
-            if(count($tot) > 0 ){
-                foreach($tot as $t){
-                    $totPrice = $t["pr_price"] * $quantity;
-                }
-            }else{
-                $totPrice = 0;
-            } 
+            $item = $db->insert($doc, $table);
 
-            $item = $db->_exec("INSERT INTO tb_sale_items (sli_saleId, sli_productId, sli_quantity, sli_totalPrice)
-                                 VALUES ({$id}, {$product_id}, {$quantity}, {$totPrice}) ");
-            
-            $getPrice = $db->_query("SELECT sli_quantity, sli_totalPrice FROM tb_sale_items WHERE sli_saleId = {$id} ");
-            
+            //Busca o preço para tualizar pedido
+            $field = "sli_saleId";
+            $getPrice = $db->search2($field, $id, $table);
+
             $totPricePed = 0;
             $totQtde = 0;
 
-            if(count($getPrice) > 0 ){
-                foreach($getPrice as $g){
-                    $totPricePed += $g["sli_totalPrice"];
-                    $totQtde += $g["sli_quantity"];
-                }
-            }else{
-                $totPricePed = 0;
+            foreach($getPrice as $g){
+                $totPricePed += $g->sli_totalPrice;
+                $totQtde += $g->sli_quantity;
             }
-
-            $updPrice = $db->_exec("UPDATE tb_sales SET sl_finalPrice = {$totPricePed}, sl_quantity = {$totQtde} WHERE sl_saleId = {$id} ");
+           
+            $table = "tb_sales";
+            $doc = [ "sl_finalPrice" => $totPricePed, "sl_quantity" => $totQtde ];
+    
+            $updPrice = $db->update($id, $doc, $table);
             
-            if($item == true){
+            if($item != ""){
                 return "OK";
             }else{
                 return "ERRO: " . $item;
@@ -181,35 +173,36 @@ class Sale {
             $totPricePed = 0;
             $totQtde = 0;
 
-            $tot = $db->_query("SELECT pr_price FROM tb_products WHERE pr_productId = {$product_id}");
-            if(count($tot) > 0 ){
-                foreach($tot as $t){
-                    $totPrice = $t["pr_price"] * $quantity;
-                }
-            }else{
-                $totPrice = 0;
+            $table = "tb_products";
+            $tot = $db->search($product_id, $table);
+
+            foreach($tot as $t){
+                $totPrice = $t->pr_price * $quantity;
             }
 
-            $upItem = $db->_exec("UPDATE tb_sale_items SET sli_quantity = {$quantity}, sli_totalPrice = {$totPrice} 
-                                    WHERE sli_saleItemId = {$product_id} AND sli_saleId = {$id} ");
-            
-            $getPrice = $db->_query("SELECT sli_quantity, sli_totalPrice FROM tb_sale_items WHERE sli_saleId = {$id} ");
-            
-            if(count($getPrice) > 0 ){
-                foreach($getPrice as $g){
-                    $totPricePed = $totPricePed + $g["sli_quantity"] * $g["sli_totalPrice"];
-                    $totQtde = $totQtde + $g["sli_quantity"];
-                }
-            }else{
-                $totPricePed = 0;
+            $table = "tb_sale_items";
+            $doc = [ "sli_quantity" => $totPricePed, "sli_totalPrice" => $totQtde ];
+    
+            $updItem = $db->update2($id, $product_id, "sli_saleItemId", $doc, $table);
+         
+            //Busca o preço para tualizar pedido
+            $field = "sli_saleId";
+            $getPrice = $db->search2($field, $id, $table);
+           
+            foreach($getPrice as $g){
+                $totPricePed = $totPricePed + $g->sli_quantity * $g->sli_totalPrice;
+                $totQtde = $totQtde + $g->sli_quantity;
             }
-                                    
-            $updPrice = $db->_exec("UPDATE tb_sales SET sl_finalPrice = {$totPricePed}, sl_quantity = {$totQtde} WHERE sl_saleId = {$id} ");
-                        
-            if($upItem == true){
+            
+            $table = "tb_sales";
+            $doc = [ "sl_finalPrice" => $totPricePed, "sl_quantity" => $totQtde ];
+    
+            $updPrice = $db->update($id, $doc, $table);
+            
+            if($updItem == true){
                 return "OK";
             }else{
-                return "ERRO: " . $upItem;
+                return "ERRO: " . $updItem;
             }
         }
     }
@@ -218,14 +211,15 @@ class Sale {
      * @param  $name
      */
     public function deleteItens($product_id){
-        $db = new Database();
+        $db = new DBMongo();  
 
-        $delItem = $db->_exec("DELETE FROM tb_sale_items WHERE sli_saleItemId = {$product_id} ");
-            
+        $table = "tb_sale_items";
+        $delItem = $db->delete($product_id, $table);
+
         if($delItem == true){
             return "OK";
         }else{
-            return "ERRO: ". $delItem;
+            return "ERRO: " . $delItem;
         }
     }
 
@@ -233,11 +227,14 @@ class Sale {
      * @param  $name
      */
     public function deleteSale($id){
-        $db = new Database();
+        $db = new DBMongo();  
 
-        $delItensSale = $db->_exec("DELETE FROM tb_sale_items WHERE sli_saleId = {$id}");
-        $delSale = $db->_exec("DELETE FROM tb_sales WHERE sl_saleId = {$id}");
-            
+        $table = "tb_sale_items";
+        $delItem = $db->delete2($id, "sli_saleId", $table);
+
+        $table = "tb_sales";
+        $delSale = $db->delete($id, $table);
+        
         if($delSale == true){
             return "OK";
         }else{

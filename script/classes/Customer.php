@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-include("./db.php");
+include("./db_mongo.php");
 
 class Customer {
 
@@ -17,11 +17,14 @@ class Customer {
      */
     public function createCustomer($name){
         
-        $db = new Database(); 
+        $db = new DBMongo(); 
+    
+        $doc = [ "cs_name" => $name ];
+        $table = "tb_customer";
 
-        $customer = $db->_exec("INSERT INTO tb_customer (cs_name) VALUES ('{$name}') ");
-        
-        if($customer == true){
+        $customer = $db->insert($doc, $table);
+       
+        if($customer != ""){
             return "OK";
         }else{
             return "ERRO";
@@ -33,9 +36,11 @@ class Customer {
      */
     public function updateCustomer($customer_id, $name){
         
-        $db = new Database(); 
+        $db = new DBMongo();  
+        $table = "tb_customer";
+        $doc = [ "cs_name" => $name ];
 
-        $upCus = $db->_exec("UPDATE tb_customer SET cs_name = '{$name}' WHERE cs_customerId = {$customer_id}");
+        $upCus = $db->update($customer_id, $doc, $table);
         if($upCus == true){
             return "OK";
         }else{
@@ -48,9 +53,9 @@ class Customer {
      */
     public function deleteCustomer($customer_id){
         
-        $db = new Database(); 
-
-        $delCus = $db->_exec("DELETE FROM tb_customer WHERE cs_customerId = {$customer_id}");
+        $db = new DBMongo();  
+        $table = "tb_customer";
+        $delCus = $db->delete($customer_id, $table);
         if($delCus == true){
             return "OK";
         }else{
@@ -63,11 +68,13 @@ class Customer {
      */
     public function getCustomer($customer_id){
         
-        $db = new Database(); 
-
-        $selCus = $db->_query("SELECT * FROM tb_customer WHERE cs_customerId = {$customer_id}");
+        $db = new DBMongo(); 
+        
+        $table = "tb_customer";
        
-        return $selCus;
+        $customer = $db->search($customer_id, $table);
+
+        return $customer;
 
     }
 
@@ -76,11 +83,13 @@ class Customer {
      */
     public function listaCustomer(){
 
-        $db = new Database(); 
+        $db = new DBMongo(); 
+    
+        $field = "cs_name";
+        $table = "tb_customer";
+        $customer = $db->searchAll($field, $table);
 
-        $cus = $db->_query("SELECT * FROM tb_customer ORDER BY cs_customerId");
-        
-        return $cus;
+        return $customer;
 
     }
 

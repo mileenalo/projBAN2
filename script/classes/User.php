@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-include("./db.php");
+include("./db_mongo.php");
 
 class User {
 
@@ -23,13 +23,14 @@ class User {
      */
     public function createUser($name, $email, $password){
         
-        $db = new Database(); 
+        $db = new DBMongo(); 
+    
+        $doc = [ "usu_nome" => $name, "usu_email" => $email, "usu_password" => md5($password) ];
+        $table = "tb_users";
 
-        $pass = md5($password);
-
-        $user = $db->_exec("INSERT INTO tb_users (usu_name, usu_email, usu_password) VALUES ('{$name}', '{$email}', '{$pass}') ");
-        
-        if($user == true){
+        $customer = $db->insert($doc, $table);
+       
+        if($customer != ""){
             return "OK";
         }else{
             return "ERRO";
@@ -40,11 +41,11 @@ class User {
      * @param  $id, $name
      */
     public function updateUser($user_id, $name, $email, $password){
-        
-        $db = new Database(); 
-        $pass = md5($password);
+        $db = new DBMongo();  
+        $table = "tb_users";
+        $doc = [ "usu_nome" => $name, "usu_email" => $email, "usu_password" => md5($password) ];
 
-        $upUsu = $db->_exec("UPDATE tb_users SET usu_name = '{$name}', usu_email = '{$email}', usu_password = '{$pass}' WHERE usu_userId = {$user_id} ");
+        $upUsu = $db->update($user_id, $doc, $table);
         if($upUsu == true){
             return "OK";
         }else{
@@ -57,14 +58,17 @@ class User {
      */
     public function deleteUser($user_id){
         
-        $db = new Database(); 
+        $db = new DBMongo();  
 
-        $delUsu = $db->_exec("DELETE FROM tb_users WHERE usu_userId = {$user_id}");
+        $table = "tb_users";
+        $delUsu = $db->delete($user_id, $table);
+
         if($delUsu == true){
             return "OK";
         }else{
             return "ERRO: " . $delUsu;
         }
+
     }
 
     /**
@@ -72,10 +76,12 @@ class User {
      */
     public function getUser($user_id){
         
-        $db = new Database(); 
-
-        $getUsu = $db->_query("SELECT * FROM tb_users WHERE usu_userId = {$user_id}");
+        $db = new DBMongo(); 
         
+        $table = "tb_users";
+       
+        $getUsu = $db->search($user_id, $table);
+
         return $getUsu;
 
     }
@@ -85,10 +91,12 @@ class User {
      */
     public function listaUser(){
 
-        $db = new Database(); 
+        $db = new DBMongo(); 
+    
+        $field = "usu_nome";
+        $table = "tb_users";
+        $usu = $db->searchAll($field, $table);
 
-        $usu = $db->_query("SELECT usu_userId, usu_name, usu_email, usu_password FROM tb_users ORDER BY usu_userId");
-        
         return $usu;
 
     }

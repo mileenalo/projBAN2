@@ -14,7 +14,7 @@ if(isset($_GET["a"])){
 
         $res = $Product->listaProduct();
 		
-		if(count($res) > 0){
+		if($res != ""){
 			echo '<div class="table-responsive">';
 			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 				echo '<thead>';
@@ -30,15 +30,15 @@ if(isset($_GET["a"])){
 				echo '<tbody style="cursor: row-resize">';
                 foreach($res as $r){
 					echo '<tr>';
-						echo '<td style="text-align: left">'.$r["pr_productId"].'</td>';
-						echo '<td style="text-align: center">'.$r["pr_description"].'</td>';
-                        echo '<td style="text-align: left">R$ '.str_replace('.',',',$r["pr_price"]).'</td>';
-                        echo '<td style="text-align: center">'.$r["pr_detail"].'</td>';
+						echo '<td style="text-align: left">'.$r->_id.'</td>';
+						echo '<td style="text-align: center">'.$r->pr_description.'</td>';
+                        echo '<td style="text-align: left">R$ '.str_replace('.',',',$r->pr_price).'</td>';
+                        echo '<td style="text-align: center">'.$r->pr_detail.'</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Editar" onclick="get_item(\''.$r["pr_productId"].'\')" class="fas fa-edit" style="cursor: pointer"></i>';
+							echo '<i title="Editar" onclick="get_item(\''.$r->_id.'\')" class="fas fa-edit" style="cursor: pointer"></i>';
 						echo '</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Deletar" onclick="del_item(\''.$r["pr_productId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+							echo '<i title="Deletar" onclick="del_item(\''.$r->_id.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
 						echo '</td>';
 					echo '</tr>';
 				}
@@ -92,11 +92,12 @@ if(isset($_GET["a"])){
 
         $res = $Product->getProduct($id);
 		
-        if(count($res) > 0){
-            $res[0]['pr_description'] = utf8_encode($res[0]['pr_description']);
-            $res[0]['pr_detail'] = utf8_encode($res[0]['pr_detail']);
-            $a_retorno["res"] = $res;
-            $c_retorno = json_encode($a_retorno["res"]);
+        $a_retorno = array();
+        foreach($res as $r){
+			array_push($a_retorno, utf8_encode($r->pr_description));
+			array_push($a_retorno, $r->pr_price);
+			array_push($a_retorno, utf8_encode($r->pr_detail));
+            $c_retorno = json_encode($a_retorno);
             print_r($c_retorno);
         }
 	}
@@ -199,13 +200,9 @@ include("dashboard.php");
                 $('#mod_formul').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
 			},
 			success: function retorno_ajax(retorno) {
-				if(retorno == "OK"){
-                    $('#mod_formul').modal('hide');
-					location.reload();
-                    lista_itens();  
-                }else{
-                    alert("ERRO AO CADASTRAR PRODUTO! " + retorno);
-                }
+                $('#mod_formul').modal('hide');
+				location.reload();
+                lista_itens();  
 			}
 		});
 	}
@@ -239,9 +236,9 @@ include("dashboard.php");
                     
 					var obj_ret = JSON.parse(retorno);
 
-					$("#frm_nome_edit").val(obj_ret[0].pr_description);
-					$("#frm_preco_edit").val(obj_ret[0].pr_price);
-                    $("#frm_detail_edit").val(obj_ret[0].pr_detail);
+					$("#frm_nome_edit").val(obj_ret[0]);
+					$("#frm_preco_edit").val(obj_ret[1]);
+                    $("#frm_detail_edit").val(obj_ret[2]);
 				}
 			}
 		});

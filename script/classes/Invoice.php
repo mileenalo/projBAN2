@@ -28,7 +28,6 @@ class Invoice {
      * @param  $name
      */
     public function createInvoice($date, $price){
-        $db = new Database();
         $number = "";
         $key = "";
 
@@ -44,25 +43,15 @@ class Invoice {
         $serie = 4;
         $key = intval($key);
 
-        $invoice = $db->_exec("INSERT INTO tb_invoices (in_number, in_serie, in_key, in_date, in_price)
-                                 VALUES({$number}, {$serie}, {$key}, '{$date}', {$price}) ");
-        $numInv = $db->_query("SELECT in_invoiceId 
-                                FROM tb_invoices 
-                                WHERE in_number = {$number} 
-                                AND in_serie = {$serie} 
-                                AND in_key = {$key}
-                                AND in_date = '{$date}'
-                                AND in_price = {$price}
-                                ORDER BY in_invoiceId DESC LIMIT 1");
-        foreach($numInv as $n){
-            $codInv = $n["in_invoiceId"];
-        }
+        $db = new DBMongo(); 
+    
+        $doc = [ "in_number" => $number, "in_serie" => $serie, "in_key" => $key, "in_date" => $date, "in_price" => $price ];
+        $table = "tb_invoices";
 
-        if($invoice == true){
-            return $codInv;
-        }else{
-            return 0;
-        }
+        $invoice = $db->insert($doc, $table);
+    
+        return $invoice;
+
     }
 
 }

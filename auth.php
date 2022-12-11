@@ -1,26 +1,22 @@
 <?php
 
-    include("./db.php");
+    include("./db_mongo.php");
     include("./script/classes/Log.php");
     
     $user = $_POST['user'];
     $password = md5($_POST['password']);
     
-    $db = new Database();
+    $db = new DBMongo();
     $Logs = new Logs();
-    
-    $log = $db->_query("SELECT * FROM tb_users WHERE usu_email = '{$user}' AND usu_password = '{$password}'");
+    $table = "tb_users";
+       
+    $log = $db->search3("usu_email", $user, "usu_password", $password, $table);
 
-    if(count($log) > 0){
-        foreach($log as $l){
-            setcookie('u_id', $l["usu_userId"]);
-
-            $Logs->createLog($l["usu_userId"], "Usuário Logado!");
-        }
-        header('location: ./_pedidos.php');
-    }else{
-        header('location: ./login.php');
+    foreach($log as $l){
+        setcookie('u_id', $l->_id);
+        $Logs->createLog($l->_id, "Usuário Logado!");
     }
+    header('location: ./_pedidos.php');
 
 ?>
 <!doctype html>

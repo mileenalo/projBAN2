@@ -15,7 +15,7 @@ if(isset($_GET["a"])){
         $res = $Sale->listSaleInfo();
 		$ped = "";
 
-		if(count($res) > 0){
+		if($res != ""){
 			echo '<div class="table-responsive">';
 			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 				echo '<thead>';
@@ -30,47 +30,47 @@ if(isset($_GET["a"])){
 				echo '<tbody style="cursor: row-resize">';
                 foreach($res as $r){
 					
-					if($ped != $r["sl_saleId"]){
+					if($ped != $r->_id){
 						if($r["in_number"] != ""){
 							$disabled = "disabled";
 						}else{
 							$disabled = "";
 						}
 						echo '<tr>';
-						echo '	<td colspan="1" class="text-white text-right bg-secondary">'.$r["sl_saleId"].'</td>';
-						echo '	<td colspan="1" class="text-white text-right bg-secondary">'.$r["cs_name"].'</td>';
-						echo '	<td colspan="1" class="text-white text-left bg-secondary">Vendedor: '.$r["usu_name"].'</td>';
-						echo '	<td colspan="1" class="text-white text-center bg-secondary">NF '.$r["in_number"].'/'.$r["in_serie"].'</td>';
-						echo '	<td colspan="1" class="text-white text-center bg-secondary">Total R$'.str_replace(".",",",$r["sl_finalPrice"]).'</td>';
+						echo '	<td colspan="1" class="text-white text-right bg-secondary">'.$r->_id.'</td>';
+						echo '	<td colspan="1" class="text-white text-right bg-secondary">'.$r->cs_name.'</td>';
+						echo '	<td colspan="1" class="text-white text-left bg-secondary">Vendedor: '.$r->usu_name.'</td>';
+						echo '	<td colspan="1" class="text-white text-center bg-secondary">NF '.$r->in_number.'/'.$r->in_serie.'</td>';
+						echo '	<td colspan="1" class="text-white text-center bg-secondary">Total R$'.str_replace(".",",",$r->sl_finalPrice).'</td>';
 						echo '	<td colspan="1" class="text-white text-right bg-secondary">';
-						if($r["in_number"] == ""){
-							echo '		Faturar <i title="Editar" onclick="fat_pedido(\''.$r["sl_saleId"].'\')" class="fas fa-edit" style="cursor: pointer"></i>';
+						if($r->in_number == ""){
+							echo '		Faturar <i title="Editar" onclick="fat_pedido(\''.$r->_id.'\')" class="fas fa-edit" style="cursor: pointer"></i>';
 						}
 						echo '	</td>';
                         echo '	<td td colspan="2" class="text-white text-right bg-secondary">';
-						if($r["in_number"] == ""){
-							echo '		Excluir <i title="Deletar Pedido" onclick="del_ped(\''.$r["sl_saleId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+						if($r->in_number == ""){
+							echo '		Excluir <i title="Deletar Pedido" onclick="del_ped(\''.$r->_id.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
 						}
 						echo '	</td>';
 						echo '</tr>';
 					}
 
 					echo '<tr>';
-						echo '<td colspan="2" style="text-align: left">'.$r["pr_description"].'</td>';
-						echo '<td colspan="2" style="text-align: left">'.$r["pr_detail"].'</td>'; 
-						echo '<td colspan="1" style="text-align: center">'.str_replace(".",",",$r["pr_price"]).'</td>';
+						echo '<td colspan="2" style="text-align: left">'.$r->pr_description.'</td>';
+						echo '<td colspan="2" style="text-align: left">'.$r->pr_detail.'</td>'; 
+						echo '<td colspan="1" style="text-align: center">'.str_replace(".",",",$r->pr_price).'</td>';
 						echo '<td colspan="1" style="text-align: right;">';
 							echo '<div class="input-group">';
-								echo '<input onfocus="this.select()" onblur="altera_item(this, this.value, \''.$r["sli_saleItemId"].'\', \''.$r["sl_saleId"].'\');" style="text-align: end;" type="number" value="'.$r["sli_quantity"].'" class="input-form-sm"'.$disabled.'>';
+								echo '<input onfocus="this.select()" onblur="altera_item(this, this.value, \''.$r->sli_saleItemId.'\', \''.$r->sl_saleId.'\');" style="text-align: end;" type="number" value="'.$r->sli_quantity.'" class="input-form-sm"'.$disabled.'>';
 							echo '</div>';
 						echo '</td>';
 						echo '<td td colspan="1" style="text-align: center">';
-						if($r["in_number"] == ""){
-							echo '	<i title="Deletar Item" onclick="del_item(\''.$r["sli_saleItemId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+						if($r->in_number == ""){
+							echo '	<i title="Deletar Item" onclick="del_item(\''.$r->sli_saleItemId.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
 						}
 						echo '</td>';
 					echo '</tr>';
-					$ped = $r["sl_saleId"];
+					$ped = $r->sl_saleId;
 				}
 				echo '</tbody>';
 			echo '</table>';
@@ -544,15 +544,15 @@ include("dashboard.php");
 							<select class="form-select form-control-lg" size="1" id="frm_cliente" name="frm_cliente">
 								<option value="" selected></option>
 								<?php
-                                    include_once("db.php");
-                                    $db = new Database();
+                                   	include_once("db_mongo.php");
+								   	$db = new DBMongo(); 
+   
+								   	$field = "cs_name";
+								   	$table = "tb_customer";
+								   	$res = $db->searchAll($field, $table);
 
-									$res = $db->_query("SELECT cs_customerId, cs_name FROM tb_customer");
-
-									if(count($res) > 0){
-										foreach($res as $r){
-											echo '<option value="'.$r["cs_customerId"].'">'.trim($r["cs_name"]).'</option>';
-										}
+									foreach($res as $r){
+										echo '<option value="'.$r->_id.'">'.trim($r->cs_name).'</option>';
 									}
 								?>
 							</select>
@@ -589,12 +589,14 @@ include("dashboard.php");
 					<input type="text" style="text-align: left" aria-describedby="frm_idPedido" class="form-control form-control-lg" name="frm_idPedido" id="frm_idPedido" hidden>
 						<div class="col">
 							<?php
-								include_once("db.php");
-                                $db = new Database();
+								include_once("db_mongo.php");
+								$db = new DBMongo(); 
 
-								$res = $db->_query("SELECT * FROM tb_products");
+								$field = "pr_description";
+								$table = "tb_products";
+								$res = $db->searchAll($field, $table);
 
-								if(count($res) > 0){
+								if($res != ""){
 									echo '<div class="table-responsive" style="padding-top: 10px">';
 										echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 											echo '<thead>';
@@ -609,12 +611,12 @@ include("dashboard.php");
 											foreach($res as $r){
 
 												echo '<tr>';
-													echo '<td style="text-align: left;">'.$r["pr_description"].'</td>';
-													echo '<td style="text-align: left">'.$r["pr_detail"].'</td>';
-													echo '<td style="text-align: center">R$'.$r["pr_price"].'</td>';
+													echo '<td style="text-align: left;">'.$r->pr_description.'</td>';
+													echo '<td style="text-align: left">'.$r->pr_detail.'</td>';
+													echo '<td style="text-align: center">R$'.$r->pr_price.'</td>';
 													echo '<td colspan="1" style="text-align: right;">';
 														echo '<div class="input-group">';
-															echo '<input onfocus="this.select()" onchange="incluiItens(this.value, \''.$r["pr_productId"].'\');" style="text-align: end;" type="number" value="0" class="input-form-sm"'.$disabled.'>';
+															echo '<input onfocus="this.select()" onchange="incluiItens(this.value, \''.$r->_id.'\');" style="text-align: end;" type="number" value="0" class="input-form-sm">';
 														echo '</div>';
 												echo '</tr>';
 											}

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-include("./db.php");
+include("./db_mongo.php");
 
 class Product {
 
@@ -22,28 +22,33 @@ class Product {
      * @param  $id
      */
     public function getProduct($id){
-        $db = new Database();
+        $db = new DBMongo(); 
+        
+        $table = "tb_products";
+       
+        $prod = $db->search($id, $table);
 
-        $prod = $db->_query("SELECT * FROM tb_products WHERE pr_productId = {$id}");
-        
         return $prod;
-        
     }
 
     /**
      * @param  $name
      */
     public function createProduct($description, $price, $detail){
-        $db = new Database();
         
-        $prodct = $db->_exec("INSERT INTO tb_products (pr_description, pr_price, pr_detail)
-                                VALUES ('{$description}', {$price}, '{$detail}') ");
-        
-        if($prodct == true){
+        $db = new DBMongo(); 
+    
+        $doc = [ "pr_description" => $description, "pr_price" => $price, "pr_detail" => $detail ];
+        $table = "tb_products";
+
+        $prodct = $db->insert($doc, $table);
+       
+        if($prodct != ""){
             return "OK";
         }else{
-            return "ERRO: " . $prodct;
+            return "ERRO";
         }
+
     }
 
      /**
@@ -51,9 +56,12 @@ class Product {
      */
     public function editProduct($id, $description, $price, $detail){
         
-        $db = new Database();
-    
-        $upProd = $db->_exec("UPDATE tb_products SET pr_description = '{$description}', pr_price = {$price}, pr_detail = '{$detail}' WHERE pr_productId = {$id} ");
+        $db = new DBMongo();  
+        
+        $table = "tb_products";
+        $doc = [ "pr_description" => $description, "pr_price" => $price, "pr_detail" => $detail ];
+
+        $upProd = $db->update($id, $doc, $table);
         if($upProd == true){
             return "OK";
         }else{
@@ -66,15 +74,17 @@ class Product {
      */
     public function deleteProduct($id){
         
-        $db = new Database();
+        $db = new DBMongo();  
 
-        $delProd = $db->_exec("DELETE FROM tb_products WHERE pr_productId = {$id} ");
-            
+        $table = "tb_products";
+        $delProd = $db->delete($id, $table);
+
         if($delProd == true){
             return "OK";
         }else{
             return "ERRO: " . $delProd;
         }
+       
     }
 
     /**
@@ -82,11 +92,14 @@ class Product {
     */
     public function listaProduct(){
 
-        $db = new Database(); 
+        $db = new DBMongo(); 
+    
+        $field = "pr_description";
+        $table = "tb_products";
+        $usu = $db->searchAll($field, $table);
 
-        $pro = $db->_query("SELECT * FROM tb_products ORDER BY pr_productId");
-        
-        return $pro;
+        return $usu;
+
     }
 
 }

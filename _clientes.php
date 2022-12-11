@@ -14,7 +14,7 @@ if(isset($_GET["a"])){
 
         $res = $Customer->listaCustomer();
 		
-		if(count($res) > 0){
+		if($res != ""){
 			echo '<div class="table-responsive">';
 			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 				echo '<thead>';
@@ -28,13 +28,13 @@ if(isset($_GET["a"])){
 				echo '<tbody style="cursor: row-resize">';
                 foreach($res as $r){
 					echo '<tr>';
-						echo '<td style="text-align: left">'.$r["cs_customerId"].'</td>';
-						echo '<td style="text-align: center">'.$r["cs_name"].'</td>';
+						echo '<td style="text-align: left">'.$r->_id.'</td>';
+						echo '<td style="text-align: center">'.$r->cs_name.'</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Editar" onclick="get_item(\''.$r["cs_customerId"].'\')" class="fas fa-edit" style="cursor: pointer"></i>';
+							echo '<i title="Editar" onclick="get_item(\''.$r->_id.'\')" class="fas fa-edit" style="cursor: pointer"></i>';
 						echo '</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Deletar" onclick="del_item(\''.$r["cs_customerId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+							echo '<i title="Deletar" onclick="del_item(\''.$r->_id.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
 						echo '</td>';
 					echo '</tr>';
 				}
@@ -96,12 +96,15 @@ if(isset($_GET["a"])){
 
         $res = $Customer->getCustomer($id);
 		
-        if(count($res) > 0){
-            $res[0]['cs_name'] = utf8_encode($res[0]['cs_name']);
-            $a_retorno["res"] = $res;
-            $c_retorno = json_encode($a_retorno["res"]);
+		foreach($res as $r){
+			$c_retorno = $r->cs_name;
+		}
+        //if(count($res) > 0){
+            //$res->cs_name = utf8_encode($res->cs_name);
+            //$a_retorno["res"] = $res;
+            $c_retorno = json_encode($c_retorno);
             print_r($c_retorno);
-        }
+       // }
 	}
     die();
 }
@@ -156,13 +159,11 @@ include("dashboard.php");
                 $('#mod_formul').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
 			},
 			success: function retorno_ajax(retorno) {
-				if(retorno == "OK"){
-                    $('#mod_formul').modal('hide');
-					location.reload();
-                    lista_itens();  
-                }else{
-                    alert("ERRO AO CADASTRAR CLIENTE! " + retorno);
-                }
+				
+                $('#mod_formul').modal('hide');
+				location.reload();
+                lista_itens();  
+                
 			}
 		});
 	}
@@ -196,7 +197,7 @@ include("dashboard.php");
                     
 					var obj_ret = JSON.parse(retorno);
 
-					$("#frm_nome_edit").val(obj_ret[0].cs_name);
+					$("#frm_nome_edit").val(obj_ret);
 
 				}
 			}

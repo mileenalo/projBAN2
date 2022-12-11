@@ -15,7 +15,7 @@ if(isset($_GET["a"])){
 
         $res = $User->listaUser();
 		
-		if(count($res) > 0){
+		if($res != ""){
 			echo '<div class="table-responsive">';
 			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 				echo '<thead>';
@@ -29,13 +29,13 @@ if(isset($_GET["a"])){
 				echo '<tbody>';
                 foreach($res as $r){
 					echo '<tr>';
-						echo '<td style="text-align: left">'.$r["usu_name"].'</td>';
-						echo '<td style="text-align: center">'.$r["usu_email"].'</td>';
+						echo '<td style="text-align: left">'.$r->usu_nome.'</td>';
+						echo '<td style="text-align: center">'.$r->usu_email.'</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Editar" onclick="get_item(\''.$r["usu_userId"].'\')" class="fas fa-edit" style="cursor: pointer"></i>';
+							echo '<i title="Editar" onclick="get_item(\''.$r->_id.'\')" class="fas fa-edit" style="cursor: pointer"></i>';
 						echo '</td>';
                         echo '<td style="text-align: center">';
-							echo '<i title="Deletar" onclick="del_item(\''.$r["usu_userId"].'\')" class="fas fa-trash" style="cursor: pointer"></i>';
+							echo '<i title="Deletar" onclick="del_item(\''.$r->_id.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
 						echo '</td>';
 					echo '</tr>';
 				}
@@ -101,12 +101,11 @@ if(isset($_GET["a"])){
         $id = $_POST["id"];
 
         $res = $User->getUser($id);
-		
-        if(count($res) > 0){
-            $res[0]['usu_name'] = utf8_encode($res[0]['usu_name']);
-            $res[0]['usu_email'] = utf8_encode($res[0]['usu_email']);
-            $a_retorno["res"] = $res;
-            $c_retorno = json_encode($a_retorno["res"]);
+		$a_retorno = array();
+        foreach($res as $r){
+			array_push($a_retorno, utf8_encode($r->usu_nome));
+			array_push($a_retorno, utf8_encode($r->usu_email));
+            $c_retorno = json_encode($a_retorno);
             print_r($c_retorno);
         }
 	}
@@ -166,13 +165,9 @@ include("dashboard.php");
                 $('#mod_formul').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
 			},
 			success: function retorno_ajax(retorno) {
-				if(retorno == "OK"){
-                    $('#mod_formul').modal('hide');
-					location.reload();
-                    lista_itens();  
-                }else{
-                    alert("ERRO AO CADASTRAR USUÁRIO! " + retorno);
-                }
+                $('#mod_formul').modal('hide');
+				location.reload();
+                lista_itens();  
 			}
 		});
 	}
@@ -202,11 +197,11 @@ include("dashboard.php");
 			success: function retorno_ajax(retorno) {
 				if(retorno != ""){
                     $("#frm_id").val(id);
-                    
+                    console.log(retorno)
 					var obj_ret = JSON.parse(retorno);
 
-					$("#frm_nome_edit").val(obj_ret[0].usu_name);
-					$("#frm_user_edit").val(obj_ret[0].usu_email);
+					$("#frm_nome_edit").val(obj_ret[0]);
+					$("#frm_user_edit").val(obj_ret[1]);
 
 				}
 			}

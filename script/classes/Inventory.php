@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-include("./db.php");
+include("./db_mongo.php");
 
 class Inventory {
 
@@ -26,11 +26,12 @@ class Inventory {
      * @param  $id
      */
     public function getLocation($id){
+        $db = new DBMongo(); 
         
-        $db = new Database();
+        $table = "tb_inventory";
+       
+        $loc = $db->search($id, $table);
 
-        $loc = $db->_query("SELECT iv_location FROM tb_inventory WHERE iv_inventoryId = {$id}");
-        
         return $loc;
     }
 
@@ -38,24 +39,31 @@ class Inventory {
      * @param  $location
      */
     public function createInventory($location){
-        $db = new Database();
-        
-        $invent = $db->_exec("INSERT INTO tb_inventory (iv_location) VALUES ('{$location}') ");
-        
-        if($invent == true){
+        $db = new DBMongo(); 
+    
+        $doc = [ "iv_location" => $location ];
+        $table = "tb_inventory";
+
+        $invent = $db->insert($doc, $table);
+       
+        if($invent != ""){
             return "OK";
         }else{
-            return "ERRO: " . $invent;
+            return "ERRO";
         }
+
     }
 
      /**
      * @param  $name
      */
     public function editInvent($id, $location){
-        $db = new Database();
+        $db = new DBMongo();  
+        
+        $table = "tb_inventory";
+        $doc = [ "iv_location" => $location ];
 
-        $upInv = $db->_exec("UPDATE tb_inventory SET iv_location = '{$location}' WHERE iv_inventoryId = {$id}");
+        $upInv = $db->update($id, $doc, $table);
         if($upInv == true){
             return "OK";
         }else{
@@ -67,15 +75,16 @@ class Inventory {
      * @param  $name
      */
     public function deleteInvent($id){
-        $db = new Database();
+        $db = new DBMongo();  
 
-        $delInv = $db->_exec("DELETE FROM tb_inventory WHERE iv_inventoryId = {$id} ");
-        
+        $table = "tb_inventory";
+        $delInv = $db->delete($id, $table);
+
         if($delInv == true){
             return "OK";
         }else{
-            return "ERRO: " . $upInv;
-        }   
+            return "ERRO: " . $delInv;
+        }
     }
 
     /************************************************************************************************** 
@@ -85,10 +94,12 @@ class Inventory {
      * @param  $id
      */
     public function getItem($id){
-        $db = new Database();
-
-        $itn = $db->_query("SELECT * FROM tb_inventory_itens WHERE ivt_inventoryItensId = {$id}");
+        $db = new DBMongo(); 
         
+        $table = "tb_inventory_itens";
+       
+        $itn = $db->search($id, $table);
+
         return $itn;
     }
 
@@ -96,15 +107,17 @@ class Inventory {
      * @param  $location
      */
     public function createInventoryItems($id, $productId, $quantity ){
-        $db = new Database();
+        $db = new DBMongo(); 
+    
+        $doc = [ "ivt_inventoryId" => new MongoDB\BSON\ObjectId($id), "ivt_productId" => new MongoDB\BSON\ObjectId($productId), "ivt_quantity" => $quantity ];
+        $table = "tb_inventory_items";
 
-        $inventIte = $db->_exec("INSERT INTO tb_inventory_itens (ivt_inventoryId, ivt_productId, ivt_quantity) 
-                                    VALUES({$id}, {$productId}, {$quantity}) ");
-        
-        if($inventIte == true){
+        $inventIte = $db->insert($doc, $table);
+       
+        if($inventIte != ""){
             return "OK";
         }else{
-            return "ERRO: " . $inventIte;
+            return "ERRO";
         }
     }
 
@@ -112,9 +125,12 @@ class Inventory {
      * @param  $name
      */
     public function editInventItem($itemId, $quantity){
-        $db = new Database();
+        $db = new DBMongo();  
+        
+        $table = "tb_inventory_itens";
+        $doc = [ "ivt_quantity" => $quantity ];
 
-        $upInvIt = $db->_exec("UPDATE tb_inventory_itens SET ivt_quantity = {$quantity} WHERE ivt_inventoryItensId = {$itemId}");
+        $upInvIt = $db->update($itemId, $doc, $table);
         if($upInvIt == true){
             return "OK";
         }else{
@@ -126,10 +142,11 @@ class Inventory {
      * @param  $name
      */
     public function deleteInventItem($itemId){
-        $db = new Database();
+        $db = new DBMongo();  
 
-        $delInvIt = $db->_exec("DELETE FROM tb_inventory_itens WHERE ivt_inventoryItensId = {$itemId} ");
-            
+        $table = "tb_inventory_itens";
+        $delInvIt = $db->delete($itemId, $table);
+
         if($delInvIt == true){
             return "OK";
         }else{
@@ -142,11 +159,13 @@ class Inventory {
     */
     public function listaInventory(){
 
-        $db = new Database(); 
+        $db = new DBMongo(); 
+    
+        $field = "iv_location";
+        $table = "tb_inventory";
+        $lct = $db->searchAll($field, $table);
 
-        $pro = $db->_query("SELECT * FROM tb_inventory ORDER BY iv_inventoryId");
-        
-        return $pro;
+        return $lct;
     }
 
     /**
