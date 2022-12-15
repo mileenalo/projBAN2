@@ -136,9 +136,12 @@ class DBMongo{
 
     public function innerSelect($aggregate){
 
-        $results = $this->getCollection()->aggregate($aggregate);
+        $mng = new MongoDB\Driver\Manager("mongodb+srv://projbanmilena:S3nh45123@projetoban2udesc.fhhuj0w.mongodb.net/test");
+        $aggregate2 = new \MongoDB\Driver\Command($aggregate);
 
-        return $results;
+        $cursor = $mng->executeCommand("db_projeto", $aggregate2);
+        //var_dump($cursor);
+        return $cursor;
     }
 }
 

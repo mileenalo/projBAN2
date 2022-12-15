@@ -14,26 +14,26 @@ if(isset($_GET["a"])){
 
         $res = $Sale->graphSale();
 		
-		if(count($res) > 0){
+		if($res != ""){
 			echo '<div class="table-responsive">';
 			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 				echo '<thead>';
 					echo '<tr>';
+						echo '<th style="text-align: left">Id Pedido</th>';
 						echo '<th style="text-align: left">Id Cliente</th>';
 						echo '<th style="text-align: left">Cliente</th>';
-                        echo '<th style="text-align: center">Quantidade de Pedidos</th>';
-                        echo '<th style="text-align: center">Total Gasto</th>';
-                        echo '<th style="text-align: center">Total de Itens</th>';
+                        echo '<th style="text-align: center">Produto</th>';
+                        echo '<th style="text-align: center">Quantidade</th>';
 					echo '</tr>';
 				echo '</thead>';
 				echo '<tbody style="cursor: row-resize">';
                 foreach($res as $r){
 					echo '<tr>';
-						echo '<td style="text-align: left">'.$r["sl_customerId"].'</td>';
-						echo '<td style="text-align: left">'.$r["cs_name"].'</td>';
-                        echo '<td style="text-align: center">'.$r["qtdPed"].'</td>';
-                        echo '<td style="text-align: center">R$ '.str_replace(".",",",number_format($r["totVal"], 2)).'</td>';
-                        echo '<td style="text-align: center">'.$r["qtd"].'</td>';
+						echo '<td style="text-align: left">'.$r->_id.'</td>';
+						echo '<td style="text-align: left">'.$r->customer_sale[0]->_id.'</td>';
+						echo '<td style="text-align: left">'.$r->customer_sale[0]->cs_name.'</td>';
+                        echo '<td style="text-align: center">'.$r->product_itens[0]->pr_description.'</td>';
+                        echo '<td style="text-align: center">'.$r->sl_quantity.'</td>';
 					echo '</tr>';
 				}
 				echo '</tbody>';

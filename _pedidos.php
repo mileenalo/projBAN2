@@ -24,53 +24,35 @@ if(isset($_GET["a"])){
 						echo '<th colspan="2" style="text-align: left">Detalhes</th>';
 						echo '<th style="text-align: center">Preço</th>';
 						echo '<th style="text-align: center">Quantidade</th>';
-						echo '<th style="text-align: center">Ação</th>';
 					echo '</tr>';
 				echo '</thead>';
 				echo '<tbody style="cursor: row-resize">';
                 foreach($res as $r){
 					
 					if($ped != $r->_id){
-						if($r["in_number"] != ""){
-							$disabled = "disabled";
-						}else{
-							$disabled = "";
-						}
+
 						echo '<tr>';
 						echo '	<td colspan="1" class="text-white text-right bg-secondary">'.$r->_id.'</td>';
-						echo '	<td colspan="1" class="text-white text-right bg-secondary">'.$r->cs_name.'</td>';
-						echo '	<td colspan="1" class="text-white text-left bg-secondary">Vendedor: '.$r->usu_name.'</td>';
-						echo '	<td colspan="1" class="text-white text-center bg-secondary">NF '.$r->in_number.'/'.$r->in_serie.'</td>';
+						echo '	<td colspan="1" class="text-white text-right bg-secondary">Cliente: '.$r->customer_sale[0]->cs_name.'</td>';
+						echo '	<td colspan="1" class="text-white text-left bg-secondary">Vendedor: '.$r->seller_sale[0]->usu_nome.'</td>';
 						echo '	<td colspan="1" class="text-white text-center bg-secondary">Total R$'.str_replace(".",",",$r->sl_finalPrice).'</td>';
-						echo '	<td colspan="1" class="text-white text-right bg-secondary">';
-						if($r->in_number == ""){
-							echo '		Faturar <i title="Editar" onclick="fat_pedido(\''.$r->_id.'\')" class="fas fa-edit" style="cursor: pointer"></i>';
-						}
-						echo '	</td>';
-                        echo '	<td td colspan="2" class="text-white text-right bg-secondary">';
-						if($r->in_number == ""){
-							echo '		Excluir <i title="Deletar Pedido" onclick="del_ped(\''.$r->_id.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
-						}
-						echo '	</td>';
+						echo '	<td colspan="2" class="text-white text-center bg-secondary"></td>';
 						echo '</tr>';
 					}
+					$count = 0;
+					foreach($r->product_itens as $prod){
+						$count++;
+						echo '<tr>';
+							echo '<td colspan="2" style="text-align: left">'.$prod->pr_description.'</td>';
+							echo '<td colspan="2" style="text-align: left">'.$prod->pr_detail.'</td>'; 
+							echo '<td colspan="1" style="text-align: center">'.str_replace(".",",",$prod->pr_price).'</td>';
+							echo '<td colspan="1" style="text-align: center">'.$count.'</td>';
 
-					echo '<tr>';
-						echo '<td colspan="2" style="text-align: left">'.$r->pr_description.'</td>';
-						echo '<td colspan="2" style="text-align: left">'.$r->pr_detail.'</td>'; 
-						echo '<td colspan="1" style="text-align: center">'.str_replace(".",",",$r->pr_price).'</td>';
-						echo '<td colspan="1" style="text-align: right;">';
-							echo '<div class="input-group">';
-								echo '<input onfocus="this.select()" onblur="altera_item(this, this.value, \''.$r->sli_saleItemId.'\', \''.$r->sl_saleId.'\');" style="text-align: end;" type="number" value="'.$r->sli_quantity.'" class="input-form-sm"'.$disabled.'>';
-							echo '</div>';
-						echo '</td>';
-						echo '<td td colspan="1" style="text-align: center">';
-						if($r->in_number == ""){
-							echo '	<i title="Deletar Item" onclick="del_item(\''.$r->sli_saleItemId.'\')" class="fas fa-trash" style="cursor: pointer"></i>';
-						}
-						echo '</td>';
-					echo '</tr>';
-					$ped = $r->sl_saleId;
+							echo '</td>';
+						echo '</tr>';
+					}
+					
+					$ped = $r->_id;
 				}
 				echo '</tbody>';
 			echo '</table>';
@@ -93,7 +75,8 @@ if(isset($_GET["a"])){
 
         $res = $Sale->createSale($cliente, $seller, $date);
 		
-		echo $res;
+		$res2 = $Sale->closeSale($res, 2, "6655");
+		echo $res2;
 		die();
 	}
 
@@ -102,12 +85,15 @@ if(isset($_GET["a"])){
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	if($_GET["a"] == "inclui_item"){
         $Sale = new Sale();
-
-        $quantity = $_POST["quantity"];
+		
+		$quantity = $_POST["quantity"];
         $c_recno = $_POST["c_recno"];
 		$pedido = $_POST["pedido"];
+		$seller = $_POST["seller"];
+        $cliente = $_POST["cliente"];
+		$date = date("Ymd");
 
-        $res = $Sale->editItens($pedido, $c_recno, $quantity, 1);
+        $res = $Sale->createSale($cliente, $seller,$date, $c_recno, $quantity, 1);
 		
 		echo $res;
 		die();
@@ -250,7 +236,8 @@ include("dashboard.php");
 <script type="text/javascript">
 	var a_itens = Array();
 	var tipoPagto = 0;
-
+	var seller = "";
+    var cliente = "";
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Listar itens:
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -275,27 +262,12 @@ include("dashboard.php");
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Incluir itens:
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	var ajax_div = $.ajax(null);
-	const incluiPedido = () => {
-        if(ajax_div){ ajax_div.abort(); }
-		ajax_div = $.ajax({
-			cache: false,
-			async: true,
-			url: '?a=inclui_pedido',
-			type: 'post',
-			data: { 
-                seller: $("#frm_seller").val(),
-                cliente: $("#frm_cliente").val(),
-            },
-			beforeSend: function(){
-                $('#mod_formul').html('<div class="spinner-grow m-3 text-primary" role="status"><span class="visually-hidden">Aguarde...</span></div>');
-			},
-			success: function retorno_ajax(retorno) {
-				$('#mod_formul').modal('hide');
-				$("#frm_idPedido").val(retorno);
-				$('#mod_formul2').modal('show');
-			}
-		});
+	function incluiPedido(){
+		seller = $("#frm_seller").val();
+        cliente = $("#frm_cliente").val();
+		$('#mod_formul').modal('hide');
+		$('#mod_formul2').modal('show');
+    
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -310,6 +282,8 @@ include("dashboard.php");
 			url: '?a=inclui_item',
 			type: 'post',
 			data: { 
+				cliente:cliente,
+				seller:seller,
 				quantity: obj_value,
                 c_recno: c_recno,
 				pedido: $("#frm_idPedido").val(),

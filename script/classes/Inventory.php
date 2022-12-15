@@ -96,7 +96,7 @@ class Inventory {
     public function getItem($id){
         $db = new DBMongo(); 
         
-        $table = "tb_inventory_itens";
+        $table = "tb_inventory_items";
        
         $itn = $db->search($id, $table);
 
@@ -127,7 +127,7 @@ class Inventory {
     public function editInventItem($itemId, $quantity){
         $db = new DBMongo();  
         
-        $table = "tb_inventory_itens";
+        $table = "tb_inventory_items";
         $doc = [ "ivt_quantity" => $quantity ];
 
         $upInvIt = $db->update($itemId, $doc, $table);
@@ -144,7 +144,7 @@ class Inventory {
     public function deleteInventItem($itemId){
         $db = new DBMongo();  
 
-        $table = "tb_inventory_itens";
+        $table = "tb_inventory_items";
         $delInvIt = $db->delete($itemId, $table);
 
         if($delInvIt == true){
@@ -172,13 +172,19 @@ class Inventory {
     * @param 
     */
     public function listaInventoryItens(){
+        
+        $aggregate = [
+            'aggregate' => 'tb_inventory_items',
+            'cursor' => new stdClass,
+            'pipeline' => [
+                ['$lookup' => ["from" => "tb_inventory","localField" => "ivt_inventoryId","foreignField" => "_id","as" => "inventory_itens"]],
+                ['$lookup' => ["from" => "tb_products","localField" => "ivt_productId","foreignField" => "_id","as" => "product_itens"]],
+            ], 
+        ];
+        
+        $db = new DBMongo(); 
 
-        $db = new Database(); 
-
-        $pro = $db->_query("SELECT * FROM tb_inventory_itens 
-                            INNER JOIN tb_products ON pr_productId = ivt_productId 
-                            INNER JOIN tb_inventory ON iv_inventoryId = ivt_inventoryId 
-                            ORDER BY ivt_inventoryId, ivt_productId");
+        $pro = $db->innerSelect($aggregate);
         
         return $pro;
     }

@@ -50,7 +50,7 @@ class Invoice {
 
         $invoice = $db->insert($doc, $table);
     
-        return $invoice;
+        return $invoice->oid;
 
     }
 

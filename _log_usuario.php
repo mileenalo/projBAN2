@@ -14,7 +14,7 @@ if(isset($_GET["a"])){
 
         $res = $Logs->listLog();
 		
-		if(count($res) > 0){
+		if($res != ""){
 			echo '<div class="table-responsive">';
 			echo '<table id="tb_lista" class="table table-striped table-hover table-sm" style="font-size: 10pt">';
 				echo '<thead>';
@@ -28,10 +28,10 @@ if(isset($_GET["a"])){
 				echo '<tbody style="cursor: row-resize">';
                 foreach($res as $r){
 					echo '<tr>';
-						echo '<td style="text-align: left">'.$r["lg_logId"].'</td>';
-						echo '<td style="text-align: left">'.$r["usu_name"].'</td>';
-                        echo '<td style="text-align: center">'.substr($r["lg_date"], 8, 2).'/'.substr($r["lg_date"], 5, 2).'/'.substr($r["lg_date"], 0, 4).substr($r["lg_date"], 10).'</td>';
-                        echo '<td style="text-align: center">'.$r["lg_description"].'</td>';
+						echo '<td style="text-align: left">'.$r->_id.'</td>';
+						echo '<td style="text-align: left">'.$r->user_log[0]->usu_nome.'</td>';
+                        echo '<td style="text-align: center">'.$r->lg_date.'</td>';
+                        echo '<td style="text-align: center">'.$r->lg_description.'</td>';
 					echo '</tr>';
 				}
 				echo '</tbody>';

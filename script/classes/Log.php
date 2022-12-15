@@ -44,13 +44,22 @@ class Logs {
      * @param  $name
      */
     public function listLog(){
-        include("./db.php");
-        $db = new Database();
+        include("./db_mongo.php");
         
-        $listLogs = $db->_query("SELECT * FROM tb_logs 
-                            INNER JOIN tb_users ON lg_userId = usu_userId ORDER BY lg_logId");
+        $aggregate = [
+            'aggregate' => 'tb_logs',
+            'cursor' => new stdClass,
+            'pipeline' => [
+                ['$lookup' => ["from" => "tb_users","localField" => "lg_userId","foreignField" => "_id","as" => "user_log"]],
+            ], 
+        ];
+        
+        $db = new DBMongo(); 
+
+        $listLogs = $db->innerSelect($aggregate);
         
         return $listLogs;
+    
     }
 
 }

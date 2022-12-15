@@ -54,18 +54,6 @@
 				</a>
 			</li>	
 			<li class="nav-item">
-				<a class="nav-link" href="_transacoes.php">
-					<span data-feather="box"></span>
-					Histórico de Transações
-				</a>	
-			</li>
-			<li class="nav-item">
-				<a class="nav-link" href="_relatorioEstoque.php">
-					<span data-feather="box"></span>
-					Estoque X Pedidos
-				</a>	
-			</li>
-			<li class="nav-item">
 				<a class="nav-link" href="_log_usuario.php">
 					<span data-feather="user"></span>
 					Logs do usuário

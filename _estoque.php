@@ -67,8 +67,8 @@ if(isset($_GET["a"])){
                 foreach($its as $i){
 					echo '<tr>';
 						echo '<td style="text-align: left">'.$i->_id.'</td>';
-						echo '<td style="text-align: left">'.$i->pr_description.'</td>';
-                        echo '<td style="text-align: center">'.$i->iv_location.'</td>';
+						echo '<td style="text-align: left">'.$i->product_itens[0]->pr_description.'</td>';
+                        echo '<td style="text-align: center">'.$i->inventory_itens[0]->iv_location.'</td>';
                         echo '<td style="text-align: center">'.$i->ivt_quantity.'</td>';
                         echo '<td style="text-align: center">';
 							echo '<i title="Editar" onclick="get_itemInv(\''.$i->_id.'\')" class="fas fa-edit" style="cursor: pointer"></i>';
@@ -414,8 +414,9 @@ include("dashboard.php");
                     $("#frm_idItem").val(id);
                     
 					var obj_ret = JSON.parse(retorno);
-                    $("#frm_prodctIdEdit").val(obj_ret[0]);
-                    $("#frm_InvetIdEdit").val(obj_ret[1]);
+					
+                    $("#frm_prodctIdEdit").val(obj_ret[0].$oid);
+                    $("#frm_InvetIdEdit").val(obj_ret[1].$oid);
                     $("#frm_quantityEdit").val(obj_ret[2]);
 				}
 			}
