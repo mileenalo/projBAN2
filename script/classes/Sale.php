@@ -61,12 +61,19 @@ class Sale {
     public function createSale($customer_id, $seller_id, $date, $product_id, $quantity){
 
         $db = new DBMongo(); 
+        $table = "tb_products";
+       
+        $product = $db->search($product_id, $table);
 
+        foreach($product as $p){
+            $final_price = $p->pr_price * $quantity;
+        }
+        
         $doc = [ 
             "sl_customerId" => new MongoDB\BSON\ObjectId($customer_id), 
             "sl_sellerId" => new MongoDB\BSON\ObjectId($seller_id), 
             "sl_date" => $date, 
-            "sl_finalPrice" => 0.0, 
+            "sl_finalPrice" => $final_price, 
             "sl_quantity" => $quantity, 
             "sl_statusPayment" => 2,
             "orderItems" => [new MongoDB\BSON\ObjectId($product_id)] 
