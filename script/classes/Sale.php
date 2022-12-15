@@ -73,6 +73,7 @@ class Sale {
         ];
         $table = "tb_sales";
 
+        $sale = $db->insert($doc, $table);
         return true;
     }
 
